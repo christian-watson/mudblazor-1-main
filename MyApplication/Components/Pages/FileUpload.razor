@@ -1,0 +1,354 @@
+@page "/upload"
+
+<PageTitle>File Upload</PageTitle>
+
+<MudText Typo="Typo.h3" GutterBottom="true">File Upload</MudText>
+
+<MudFileUpload T="IBrowserFile" Accept=".csv" FilesChanged="UploadFiles2" MaximumFileCount="100">
+    <ActivatorContent>
+        <MudButton Variant="Variant.Filled"
+                   Color="Color.Primary"
+                   StartIcon="@Icons.Material.Filled.CloudUpload">
+            Only .csv files
+        </MudButton>
+    </ActivatorContent>
+</MudFileUpload>
+
+<h2>Selected file</h2>
+<div>
+    <div>File name: @FileName</div>
+    <div>File size: @FileSize.ToString("n0") bytes. @FileSizeMB.ToString("n0") megabyte(s). </div>
+    <div>File type: @FileType</div>
+    <div>Last modified: @LastModified</div>
+</div>
+
+
+@if (!string.IsNullOrEmpty(ErrorMessage))
+{
+    <div>Error: @ErrorMessage</div>
+}
+
+<div>
+    @if(ReaderEvent.returnStrings(FileName) != null){
+    <p>Lines in the csv: @ReaderEvent.returnStrings(FileName).Count</p>
+    }
+</div>>
+
+
+@if (files != null)
+{
+    <MudList T="string">
+        @foreach (var file in files)
+        {
+            <MudListItem Icon="@Icons.Material.Filled.AttachFile">
+                @file.Name <code>@file.Size bytes</code>
+            </MudListItem>
+        }
+       
+    </MudList>
+}
+
+@if (readerIDDict != null && readerIDDict.Count > 0)
+{
+
+    <p>Dictionary parse:</p>
+    <MudSimpleTable>
+        <thead>
+            <tr style="background-color: black; color:white;">
+                <th>Reader ID</th>
+                <th>Reader name</th>
+                <th>event num</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var kvp in readerIDDict)
+            {
+                var readerId = kvp.Key; 
+                var readerEvents = kvp.Value;
+                var readerName = readerEvents.First().ReaderDesc;
+
+                <tr>
+                    <td>@readerId</td>
+                    <td>@readerName</td>
+                    <td>@readerEvents.Count</td>
+                </tr>
+            }
+        </tbody>
+    </MudSimpleTable>
+
+}
+else
+{
+    <p>No data available.</p>
+    <p>@(readerIDDict !=null)</p>
+    <p>@(readerIDDict.Count > 0)</p>
+    @foreach(var kvp in readerIDDict){
+        <p>@kvp.Value</p>
+    }
+
+}
+
+@if (masterDictionary != null && masterDictionary.Count > 0)
+{
+
+    <p>Dictionary parse:</p>
+    <MudSimpleTable>
+        <thead>
+            <tr style="background-color: black; color:white;">
+                <th>Day of week</th>
+                <th>Number of events</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var kvp in masterDictionary)
+            {
+                var dayOfWeek = kvp.Key; 
+                var readerEvents = kvp.Value;
+
+                <tr>
+                    <td>@dayOfWeek</td>
+                    <td>@readerEvents.Count</td>
+                </tr>
+            }
+        </tbody>
+    </MudSimpleTable>
+
+}
+else
+{
+    <p>No data available.</p>
+    <p>@(masterDictionary !=null)</p>
+    <p>@(masterDictionary.Count > 0)</p>
+    @foreach(var kvp in masterDictionary){
+        <p>@kvp.Value</p>
+    }
+
+}
+<div>
+    <MudChart ChartType="ChartType.Line" ChartSeries="@Series" @bind-SelectedIndex="Index" XAxisLabels="@XAxisLabels" Width="100%" Height="350px" ChartOptions="@Options"/>
+    <MudGrid>
+        <MudItem xs="6">
+            <MudText Typo="Typo.body1" Class="py-3">Selected: @(Index < 0 ? "None" : Series[Index].Name)</MudText>
+        </MudItem>
+        <MudItem xs="6">
+            <MudSlider @bind-Value="Options.LineStrokeWidth" Min="1" Max="10" Color="Color.Info">Line Width: @Options.LineStrokeWidth.ToString()</MudSlider>
+        </MudItem>
+    </MudGrid>
+</div>
+@code
+{
+    private int Index = -1; //default value cannot be 0 -> first selectedindex is 0.
+    public ChartOptions Options = new ChartOptions();
+    
+    public List<ChartSeries> Series = new List<ChartSeries>()
+    {
+        new ChartSeries() { Name = "Days of the week", Data = new double[6] },
+    };
+    public string[] XAxisLabels = {"Monday", "Tuesday", "Wednesday", "Thursday","Friday","Saturday","Sunday"};
+    IList<IBrowserFile> files = new List<IBrowserFile>();
+    private void UploadFiles(IReadOnlyList<IBrowserFile> files)
+    {
+        foreach (var file in files)
+        {
+            this.files.Add(file);
+        }
+    }
+
+    private void UploadFiles2(IBrowserFile file)
+    {
+        files.Add(file);
+        FileUploaded(file);
+    }
+    private Dictionary<string,List<ReaderEvent>> readerIDDict = new Dictionary<string, List<ReaderEvent>>();
+        private Dictionary<string,List<ReaderEvent>> masterDictionary = new Dictionary<string, List<ReaderEvent>>();
+    
+    public class ReaderEvent{
+        
+        private List<ReaderEvent> readerEvents = new List<ReaderEvent>();
+        public string Time {get; set;}
+        public string Location {get; set;}
+        public string ReaderDesc {get; set;}
+        public string DevId {get; set;}
+        public string MachineId {get; set;}
+        public string ReaderId {get; set;}
+
+        public ReaderEvent(){
+            Time = "0";
+            Location = "";
+            ReaderDesc = "";
+            DevId = "";
+            MachineId = "";
+            ReaderId = MachineId + DevId;
+
+        }
+        public ReaderEvent(string newTime, string newLocation, string newReaderDesc, string newDevID, string newMachineId){
+            Time = newTime;
+            Location = newLocation;
+            ReaderDesc = newReaderDesc;
+            DevId = newDevID;
+            MachineId = newMachineId;
+            ReaderId = MachineId + DevId;
+        }
+        public override string ToString(){
+            return $"Time: {Time}. Location: {Location}. Reader Description: {ReaderDesc}. DevId: {DevId}. Machine ID: {MachineId}";
+        }
+
+         public static Dictionary<string,List<ReaderEvent>> masterDict(List<ReaderEvent> newReaderEvents){
+            Dictionary<string,List<ReaderEvent>> keyValuePairs = new Dictionary<string, List<ReaderEvent>>();
+            foreach(ReaderEvent i in newReaderEvents){
+                DateTime dateTime = DateTime.Parse(i.Time);
+                string dayValue = dateTime.ToString("D").Split(",")[0];
+                if(keyValuePairs.ContainsKey(dayValue)){
+                    keyValuePairs.TryGetValue(dayValue, out var value);
+                    value.Add(i);
+                }
+                else{
+                    List<ReaderEvent> newReader = new List<ReaderEvent>();
+                        newReader.Add(i);
+                        keyValuePairs.Add(dayValue,newReader);
+                }
+            }
+            return keyValuePairs;
+        }
+        
+        public static Dictionary<String, List<ReaderEvent>> returnDictionary(List<ReaderEvent> readerEvents){
+            Dictionary<String,List<ReaderEvent>> returnDict = new Dictionary<string, List<ReaderEvent>>();
+            foreach(ReaderEvent i in readerEvents){
+                if(returnDict.ContainsKey(i.ReaderId)){
+                    returnDict.TryGetValue(i.ReaderId, out var value);
+                    value.Add(i);
+                }
+                else{
+                    List<ReaderEvent> newReader = new List<ReaderEvent>();
+                    newReader.Add(i);
+                    returnDict.Add(i.ReaderId,newReader);
+                }
+            }
+            return returnDict;
+            }
+        public static List<String[]> returnStrings(string Filename)
+{
+    String line;
+    List<String[]> returnString = new List<string[]>();
+    try
+    {
+        using (StreamReader sr = new StreamReader(Filename))
+        {
+            line = sr.ReadLine();
+            line = sr.ReadLine();
+            while (line != null)
+            {
+                returnString.Add(line.Split(','));
+                line = sr.ReadLine();
+            }
+        }
+    }
+    catch (Exception e)
+    {
+        Console.WriteLine("Exception: " + e.Message + " in returnStrings");
+        return null;
+    }
+    finally
+    {
+        Console.WriteLine("Executing finally block.");
+    }
+
+    return returnString;
+}
+
+        public static List<ReaderEvent> Display(List<String[]> returnList){
+            List<ReaderEvent> readerEvents = new List<ReaderEvent>();
+            foreach(string[] i in returnList){
+                if (i.Length >= 5)
+                {
+                    ReaderEvent newReader = new ReaderEvent(i[0], i[1], i[2], i[3], i[4]);
+                    readerEvents.Add(newReader);
+                }
+            }
+             return readerEvents;
+        }
+
+        
+
+
+        
+
+        
+
+    }
+
+
+    
+
+    private List<ReaderEvent> newEvents = new List<ReaderEvent>();
+    public string FileName { get; set; } = "";
+    public long FileSize { get; set; }
+    public long FileSizeMB {get; set;}
+    public string FileType { get; set; } = "";
+    public DateTimeOffset LastModified { get; set; }
+    public string ErrorMessage { get; set; } = "";
+
+    const int MAX_FILESIZE = 1000000 * 1024;
+    
+    public async Task FileUploaded(IBrowserFile file)
+{
+    var browserFile = file;
+
+    if (browserFile != null)
+    {
+        FileSize = browserFile.Size;
+        FileSizeMB = FileSize / 1_000_000;
+        FileType = browserFile.ContentType;
+        FileName = browserFile.Name;
+        LastModified = browserFile.LastModified;
+
+        try
+        {
+            var fileStream = browserFile.OpenReadStream(MAX_FILESIZE);
+            var targetFilePath = Path.Combine(Path.GetTempPath(), FileName);
+            Console.WriteLine($"Saving file to: {targetFilePath}");
+
+            using (var destinationStream = new FileStream(targetFilePath, FileMode.Create))
+            {
+                await fileStream.CopyToAsync(destinationStream);
+            }
+
+            finalDisplay(targetFilePath);
+            StateHasChanged();
+        }
+        catch (Exception exception)
+        {
+            ErrorMessage = exception.Message;
+        }
+    }
+}
+
+private void finalDisplay(string fileName)
+    {
+        List<string[]> listCount = ReaderEvent.returnStrings(fileName);
+        if (listCount != null)
+        {
+            newEvents = ReaderEvent.Display(listCount);
+            readerIDDict = ReaderEvent.returnDictionary(newEvents);
+            masterDictionary = ReaderEvent.masterDict(newEvents);
+            double[] eventCounts = new double[7];
+            foreach (var kvp in masterDictionary)
+        {
+            switch (kvp.Key)
+            {
+                case "Sunday": eventCounts[6] = kvp.Value.Count; break;
+                case "Monday": eventCounts[0] = kvp.Value.Count; break;
+                case "Tuesday": eventCounts[1] = kvp.Value.Count; break;
+                case "Wednesday": eventCounts[2] = kvp.Value.Count; break;
+                case "Thursday": eventCounts[3] = kvp.Value.Count; break;
+                case "Friday": eventCounts[4] = kvp.Value.Count; break;
+                case "Saturday": eventCounts[5] = kvp.Value.Count; break;
+            }
+        }
+        Series[0].Data = eventCounts;
+        }
+        
+        StateHasChanged();
+    }
+
+}
