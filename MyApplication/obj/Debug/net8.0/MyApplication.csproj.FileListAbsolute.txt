@@ -122,3 +122,4 @@ C:\Users\chisc\OneDrive\Desktop\mudblazor-1-main\MyApplication\obj\Debug\net8.0\
 C:\Users\chisc\OneDrive\Desktop\mudblazor-1-main\MyApplication\obj\Debug\net8.0\MyApplication.pdb
 C:\Users\chisc\OneDrive\Desktop\mudblazor-1-main\MyApplication\obj\Debug\net8.0\MyApplication.genruntimeconfig.cache
 C:\Users\chisc\OneDrive\Desktop\mudblazor-1-main\MyApplication\obj\Debug\net8.0\ref\MyApplication.dll
+C:\Users\chisc\OneDrive\Desktop\mudblazor-1-main\MyApplication\obj\Debug\net8.0\MyApplication.sourcelink.json

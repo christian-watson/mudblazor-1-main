@@ -168,6 +168,7 @@ else
         public string Time {get; set;}
         public string Location {get; set;}
         public string ReaderDesc {get; set;}
+        public string ReaderIdHash {get; set;}
         public string DevId {get; set;}
         public string MachineId {get; set;}
         public string ReaderId {get; set;}
@@ -176,15 +177,17 @@ else
             Time = "0";
             Location = "";
             ReaderDesc = "";
+            ReaderIdHash = "";
             DevId = "";
             MachineId = "";
             ReaderId = MachineId + DevId;
 
         }
-        public ReaderEvent(string newTime, string newLocation, string newReaderDesc, string newDevID, string newMachineId){
+        public ReaderEvent(string newTime, string newLocation, string newReaderDesc, string newReaderIdHash, string newDevID, string newMachineId){
             Time = newTime;
             Location = newLocation;
             ReaderDesc = newReaderDesc;
+            ReaderIdHash = newReaderIdHash;
             DevId = newDevID;
             MachineId = newMachineId;
             ReaderId = MachineId + DevId;
@@ -261,7 +264,7 @@ else
             foreach(string[] i in returnList){
                 if (i.Length >= 5)
                 {
-                    ReaderEvent newReader = new ReaderEvent(i[0], i[1], i[2], i[3], i[4]);
+                    ReaderEvent newReader = new ReaderEvent(i[0], i[1], i[2], i[3], i[4], i[5]);
                     readerEvents.Add(newReader);
                 }
             }
