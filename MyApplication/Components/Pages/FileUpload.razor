@@ -140,12 +140,18 @@ else
     private int Index = -1; //default value cannot be 0 -> first selectedindex is 0.
     public ChartOptions Options = new ChartOptions();
     
-    public List<ChartSeries> Series = new List<ChartSeries>()
-    {
-        new ChartSeries() { Name = "Days of the week", Data = new double[6] },
-    };
     public string[] XAxisLabels = {"Monday", "Tuesday", "Wednesday", "Thursday","Friday","Saturday","Sunday"};
     IList<IBrowserFile> files = new List<IBrowserFile>();
+    private Dictionary<string, List<ReaderEvent>> readerIDDict = StaticReaderEvent.ReaderIDDict;
+    private Dictionary<string, List<ReaderEvent>> masterDictionary = StaticReaderEvent.MasterDictionary;
+    public List<ChartSeries> Series = StaticReaderEvent.Series;
+
+    public string FileName { get; set; } = StaticReaderEvent.FileName;
+    public long FileSize { get; set; } = StaticReaderEvent.FileSize;
+    public long FileSizeMB { get; set; } = StaticReaderEvent.FileSizeMB;
+    public string FileType { get; set; } = StaticReaderEvent.FileType;
+    public DateTimeOffset LastModified { get; set; } = StaticReaderEvent.LastModified;
+    public string ErrorMessage { get; set; } = "";
     private void UploadFiles(IReadOnlyList<IBrowserFile> files)
     {
         foreach (var file in files)
@@ -159,12 +165,11 @@ else
         files.Add(file);
         FileUploaded(file);
     }
-    private Dictionary<string,List<ReaderEvent>> readerIDDict = new Dictionary<string, List<ReaderEvent>>();
-        private Dictionary<string,List<ReaderEvent>> masterDictionary = new Dictionary<string, List<ReaderEvent>>();
+    
     
     public class ReaderEvent{
         
-        private List<ReaderEvent> readerEvents = new List<ReaderEvent>();
+        
         public string Time {get; set;}
         public string Location {get; set;}
         public string ReaderDesc {get; set;}
@@ -281,16 +286,24 @@ else
     }
 
 
+    public static class StaticReaderEvent{
+        public static List<ReaderEvent> readerEvents = new List<ReaderEvent>();
+        public static string FileName { get; set; } = "";
+        public static long FileSize { get; set; }
+        public static long FileSizeMB {get; set;}
+        public static string FileType { get; set; } = "";
+        public static DateTimeOffset LastModified { get; set; }
+        public static string ErrorMessage { get; set; } = "";
+        public static Dictionary<string,List<ReaderEvent>> ReaderIDDict { get; set; } = new();
+        public static Dictionary<string, List<ReaderEvent>> MasterDictionary { get; set; } = new();
+        public static List<ChartSeries> Series  { get; set; } = new()
+        {
+            new ChartSeries() { Name = "Days of the week", Data = new double[6] },
+        };
+    }
+
     
-
     private List<ReaderEvent> newEvents = new List<ReaderEvent>();
-    public string FileName { get; set; } = "";
-    public long FileSize { get; set; }
-    public long FileSizeMB {get; set;}
-    public string FileType { get; set; } = "";
-    public DateTimeOffset LastModified { get; set; }
-    public string ErrorMessage { get; set; } = "";
-
     const int MAX_FILESIZE = 1000000 * 1024;
     
     public async Task FileUploaded(IBrowserFile file)
@@ -299,12 +312,18 @@ else
 
     if (browserFile != null)
     {
-        FileSize = browserFile.Size;
-        FileSizeMB = FileSize / 1_000_000;
-        FileType = browserFile.ContentType;
-        FileName = browserFile.Name;
-        LastModified = browserFile.LastModified;
+        StaticReaderEvent.FileSize = browserFile.Size;
+        StaticReaderEvent.FileSizeMB = FileSize / 1_000_000;
+        StaticReaderEvent.FileType = browserFile.ContentType;
+        StaticReaderEvent.FileName = browserFile.Name;
+        StaticReaderEvent.LastModified = browserFile.LastModified;
 
+        FileSize = StaticReaderEvent.FileSize;
+        FileSizeMB = StaticReaderEvent.FileSizeMB;
+        FileType = StaticReaderEvent.FileType;
+        FileName = StaticReaderEvent.FileName;
+        LastModified = StaticReaderEvent.LastModified;
+        StateHasChanged();
         try
         {
             var fileStream = browserFile.OpenReadStream(MAX_FILESIZE);
@@ -334,6 +353,9 @@ private void finalDisplay(string fileName)
             newEvents = ReaderEvent.Display(listCount);
             readerIDDict = ReaderEvent.returnDictionary(newEvents);
             masterDictionary = ReaderEvent.masterDict(newEvents);
+
+            StaticReaderEvent.ReaderIDDict = readerIDDict;
+            StaticReaderEvent.MasterDictionary = masterDictionary;
             double[] eventCounts = new double[7];
             foreach (var kvp in masterDictionary)
         {
